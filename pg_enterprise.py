@@ -35,9 +35,7 @@ def input_stuff(message, default):
 def main():
     log_config()
     gap = "~" * 50
-    logging.log(20, gap)
-    welcome = "Welcome to pg_enterprise.py"
-    logging.log(20, welcome)
+    welcome = "Initiating pg_enterprise: run scripts across your postgres cluster!Welcome to pg_enterprise.py"
 
     # Get host DB information
     source_host = input_stuff(
