@@ -1,5 +1,4 @@
 import os, sys, getopt, psycopg2, getpass, random, logging
-from subprocess import call
 
 def log_config():
     formatter = '%(asctime)s: %(levelname)s: %(message)s'
@@ -82,5 +81,12 @@ def main():
     source_cur.close()
     source_conn.close()
 
-# Initiate the main function.
-main()
+# Initiate the main function. The folloing calls main() by default if the
+# script is being called directly.
+if __name__ == "__main__":
+    try:
+        main()
+    except:
+        logging.exception(str(sys.exc_info()))
+        logging.exception(str(sys._getframe()))
+        sys.exit(2)
