@@ -117,10 +117,9 @@ def main():
                 try:
                     db_curr = db_conn.cursor()
                     db_curr.execute(sql)
-                    results = db_curr.fetchall()
-                    for result in results:
-                        #print(result)
-                        logging.log(20, result)
+                    #results = db_curr.fetchall()
+                    #for result in results:
+                        #logging.log(20, result)
                     # Only use the commit if there are updates to the DB.
                     # Use this carefully!!!
                 except (psycopg2.ProgrammingError) as e:
