@@ -1,7 +1,7 @@
-### pg_enterprise.py run a script agains several PostgreSQL DBs at once.
+### pg_enterprise.py run a script against several PostgreSQL DBs at once.
 ___
 
-Currently, the script will copy roles from one PostgreSQL host to a destination PostgreSQL host.
+Run the same query on several postgres DBs in the same instance!
 
 ___
 
@@ -15,3 +15,8 @@ ___
 1. Run `source <env>/bin/activate` to activate the virtual environment.
 1. Run `pip install -r requirements.txt` to install module dependencies.
 1. Run `python py_enterprise.py` and proide information at the prompts.
+
+Intended for use on postgresql clusters with matching schemas across the DBs.
+Add exclusions to the exclusions.yaml for unique DBs upon which you cannot run
+your scripts. After running the script, review the log for further details of
+what was completed or not.

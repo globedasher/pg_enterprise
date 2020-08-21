@@ -7,6 +7,7 @@ def log_config():
             filemode='w',
             level=logging.INFO)
     logging.info("Logging initialized.")
+    logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 
 def get_connection_info():
     # Get host DB information
@@ -74,8 +75,7 @@ def open_yaml_file(filename):
 
 def main():
     log_config()
-    welcome = "Initiating pg_enterprise: run scripts across your postgres cluster! Welcome to pg_enterprise.py. After running, review the debug.log file for run info."
-    print(welcome)
+    logging.log(20, "Welcome to pg_enterprise. Did you checkout the readme?")
 
     # Get all the connection information needed to access the DB.
     connection_info = get_connection_info()
@@ -101,20 +101,47 @@ def main():
     # Get the exclusions file and log the DBs to be excluded
     exclusions = open_yaml_file("./exclusions.yaml")
     for exclude in exclusions:
+        #print("Excluding " + exclude)
         logging.log(20, "Exclude: %s" % exclude)
 
     #Start processing the DBs and log the start of the process
     with open("./sql/table.sql") as sql_query:
+        sql = sql_query.read()
+        #print(sql)
         for database in databases:
             if database[0] not in exclusions:
+                #print(database[0])
                 logging.log(20, "Database processed: %s" % database[0])
                 connection_info['dbname'] = database[0]
                 db_conn = create_connection(connection_info)
-                db_curr = db_conn.cursor()
-                db_curr.execute(sql_query)
-                db_cur.close()
+                try:
+                    db_curr = db_conn.cursor()
+                    db_curr.execute(sql)
+                    results = db_curr.fetchall()
+                    for result in results:
+                        #print(result)
+                        logging.log(20, result)
+                    # Only use the commit if there are updates to the DB.
+                    # Use this carefully!!!
+                except (psycopg2.ProgrammingError) as e:
+                    logging.log(30, "Error: " + str(e))
+                    db_conn.rollback()
+                    db_curr.close()
+                    db_conn.close()
+                    sys.exit(2)
+                except (psycopg2.InternalError) as e:
+                    logging.log(30, "Error: " + str(e))
+                    db_conn.rollback()
+                    db_curr.close()
+                    db_conn.close()
+                    sys.exit(2)
+                except:
+                    logging.log(30, "Unhandled exception\n%s" % sys.exc_info())
+                    db_conn.rollback()
+                    sys.exit(2)
+                db_conn.commit()
+                db_curr.close()
                 db_conn.close()
-
 
 
 
