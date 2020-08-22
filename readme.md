@@ -16,7 +16,8 @@ ___
 1. Run `pip install -r requirements.txt` to install module dependencies.
 1. Run `python py_enterprise.py` and proide information at the prompts.
 
-Intended for use on postgresql clusters with matching schemas across the DBs.
-Add exclusions to the exclusions.yaml for unique DBs upon which you cannot run
-your scripts. After running the script, review the log for further details of
-what was completed or not.
+Intended to run a single SQL script  on postgresql clusters with matching
+schemas across the DBs. Currently limited to one query per SQL script. Add
+exclusions to the exclusions.yaml for unique DBs upon which you cannot run your
+scripts. After running the script, review the log for further details of what
+was completed or not.

@@ -1,12 +1,14 @@
 import os, sys, getopt, psycopg2, getpass, random, logging, yaml
+from datetime import datetime as date
 
-def log_config():
+def log_config(log_filename):
     formatter = '%(asctime)s: %(levelname)s: %(message)s'
     logging.basicConfig(format=formatter,
-            filename='debug.log',
+            filename=log_filename,
             filemode='w',
             level=logging.INFO)
     logging.info("Logging initialized.")
+    # This will cause the log lines to print to stdout as well
     logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 
 def get_connection_info():
@@ -72,8 +74,9 @@ def open_yaml_file(filename):
     return data
 
 def main():
-    log_config()
-    logging.log(20, "Welcome to pg_enterprise. Did you checkout the readme?")
+    log_filename = "log/pg_enterprise_" + str(date.now()) + ".log"
+    log_config(log_filename)
+    print("Welcome to pg_enterprise. Did you checkout the readme?")
 
     # Get all the connection information needed to access the DB.
     connection_info = get_connection_info()
@@ -140,6 +143,8 @@ def main():
                 # Close the cursor and connection
                 db_curr.close()
                 db_conn.close()
+
+    print("Your logfile is at " + log_filename)
 
 # Initiate the main function. The folloing calls main() by default if the
 # script is being called directly.
