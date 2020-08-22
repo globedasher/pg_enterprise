@@ -50,7 +50,6 @@ def create_connection(connection_info):
         sys.exit(2)
     return conn
 
-
 def input_stuff(message, default):
     # Used to make data input and defaults generic
     data = input(message)
@@ -71,7 +70,6 @@ def open_yaml_file(filename):
         data = yaml.load(f, Loader=Loader)
     #print(f.closed)
     return data
-
 
 def main():
     log_config()
@@ -117,11 +115,10 @@ def main():
                 try:
                     db_curr = db_conn.cursor()
                     db_curr.execute(sql)
-                    #results = db_curr.fetchall()
-                    #for result in results:
-                        #logging.log(20, result)
-                    # Only use the commit if there are updates to the DB.
-                    # Use this carefully!!!
+                    if "SELECT" in sql:
+                        results = db_curr.fetchall()
+                        for result in results:
+                            logging.log(20, result)
                 except (psycopg2.ProgrammingError) as e:
                     logging.log(30, "Error: " + str(e))
                     db_conn.rollback()
@@ -138,11 +135,11 @@ def main():
                     logging.log(30, "Unhandled exception\n%s" % sys.exc_info())
                     db_conn.rollback()
                     sys.exit(2)
+                # Commit the transaction
                 db_conn.commit()
+                # Close the cursor and connection
                 db_curr.close()
                 db_conn.close()
-
-
 
 # Initiate the main function. The folloing calls main() by default if the
 # script is being called directly.
