@@ -1,5 +1,59 @@
 import os, sys, getopt, psycopg2, getpass, random, logging, yaml
 from datetime import datetime as date
+import boto3
+import base64
+from botocore.exceptions import ClientError
+
+
+def get_secret():
+    secret_name = "prod/bbrains"
+    region_name = "us-west-2"
+
+    # Create a Secrets Manager client
+    session = boto3.session.Session()
+    client = session.client(
+        service_name='secretsmanager',
+        region_name=region_name
+    )
+
+    # In this sample we only handle the specific exceptions for the 'GetSecretValue' API.
+    # See https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
+    # We rethrow the exception by default.
+
+    try:
+        get_secret_value_response = client.get_secret_value(
+            SecretId=secret_name
+        )
+    except ClientError as e:
+        if e.response['Error']['Code'] == 'DecryptionFailureException':
+            # Secrets Manager can't decrypt the protected secret text using the provided KMS key.
+            # Deal with the exception here, and/or rethrow at your discretion.
+            raise e
+        elif e.response['Error']['Code'] == 'InternalServiceErrorException':
+            # An error occurred on the server side.
+            # Deal with the exception here, and/or rethrow at your discretion.
+            raise e
+        elif e.response['Error']['Code'] == 'InvalidParameterException':
+            # You provided an invalid value for a parameter.
+            # Deal with the exception here, and/or rethrow at your discretion.
+            raise e
+        elif e.response['Error']['Code'] == 'InvalidRequestException':
+            # You provided a parameter value that is not valid for the current state of the resource.
+            # Deal with the exception here, and/or rethrow at your discretion.
+            raise e
+        elif e.response['Error']['Code'] == 'ResourceNotFoundException':
+            # We can't find the resource that you asked for.
+            # Deal with the exception here, and/or rethrow at your discretion.
+            raise e
+    else:
+        # Decrypts secret using the associated KMS CMK.
+        # Depending on whether the secret is a string or binary, one of these fields will be populated.
+        if 'SecretString' in get_secret_value_response:
+            secret = get_secret_value_response['SecretString']
+            print(secret)
+        else:
+            decoded_binary_secret = base64.b64decode(get_secret_value_response['SecretBinary'])
+    return decoded_binary_secret
 
 def log_config(log_filename):
     formatter = '%(asctime)s: %(levelname)s: %(message)s'
@@ -39,10 +93,10 @@ def create_connection(connection_info):
     # Connect to the target DB and create a cursor.
     try:
         conn = psycopg2.connect(
-                dbname=connection_info['dbname'],
-                user=connection_info['user'],
-                password=connection_info['target_password'],
-                host=connection_info['target_host'])
+                dbname='postgres',
+                user=connection_info['username'],
+                password=connection_info['password'],
+                host=connection_info['host'])
         target_cur = conn.cursor()
     except (psycopg2.OperationalError) as e:
         logging.log(30, "Error: " + str(e))
@@ -79,7 +133,10 @@ def main():
     print("Welcome to pg_enterprise. Did you checkout the readme?")
 
     # Get all the connection information needed to access the DB.
-    connection_info = get_connection_info()
+    #connection_info = get_connection_info()
+
+    # Get secret information from aws
+    connection_info = get_secret()
 
     # Get a list of databases on the target database
     try:
