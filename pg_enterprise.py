@@ -1,4 +1,4 @@
-import os, sys, getopt, psycopg2, getpass, random, logging, yaml
+import os, sys, getopt, psycopg2, getpass, random, logging, yaml, json
 from datetime import datetime as date
 import boto3
 import base64
@@ -50,9 +50,11 @@ def get_secret():
         # Depending on whether the secret is a string or binary, one of these fields will be populated.
         if 'SecretString' in get_secret_value_response:
             secret = get_secret_value_response['SecretString']
+            secret = json.loads(secret)
             return secret
         else:
             decoded_binary_secret = base64.b64decode(get_secret_value_response['SecretBinary'])
+            decoded_binary_secret = json.loads(decoded_binary_secret)
             return decoded_binary_secret
 
 def log_config(log_filename):
@@ -99,10 +101,10 @@ def create_connection(connection_info):
                 host=connection_info['host'])
         target_cur = conn.cursor()
     except (psycopg2.OperationalError) as e:
-        logging.log(30, "Error: " + str(e))
+        logging.log(30, str(e))
         sys.exit(2)
     except:
-        logging.log(30, "Unhandled exception:\n" + str(sys.exc_info()))
+        logging.log(30, str(sys.exc_info()))
         sys.exit(2)
     return conn
 
@@ -149,11 +151,11 @@ def main():
         target_cur.close()
         target_conn.close()
     except (psycopg2.ProgrammingError) as e:
-        logging.log(30, "Error: " + str(e))
+        logging.log(30, str(e))
     except (psycopg2.InternalError) as e:
-        logging.log(30, "Error: " + str(e))
+        logging.log(30, str(e))
     except:
-        logging.log(30, "Unhandled exception\n%s" % sys.exc_info())
+        logging.log(30, sys.exc_info())
         sys.exit(2)
 
     # Get the exclusions file and log the DBs to be excluded
@@ -180,19 +182,19 @@ def main():
                         for result in results:
                             logging.log(20, result)
                 except (psycopg2.ProgrammingError) as e:
-                    logging.log(30, "Error: " + str(e))
+                    logging.log(30, str(e))
                     db_conn.rollback()
                     db_curr.close()
                     db_conn.close()
                     sys.exit(2)
                 except (psycopg2.InternalError) as e:
-                    logging.log(30, "Error: " + str(e))
+                    logging.log(30, str(e))
                     db_conn.rollback()
                     db_curr.close()
                     db_conn.close()
                     sys.exit(2)
                 except:
-                    logging.log(30, "Unhandled exception\n%s" % sys.exc_info())
+                    logging.log(30, sys.exc_info())
                     db_conn.rollback()
                     sys.exit(2)
                 # Commit the transaction
