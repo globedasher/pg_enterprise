@@ -53,7 +53,7 @@ def get_secret():
             print(secret)
         else:
             decoded_binary_secret = base64.b64decode(get_secret_value_response['SecretBinary'])
-    return decoded_binary_secret
+        return decoded_binary_secret
 
 def log_config(log_filename):
     formatter = '%(asctime)s: %(levelname)s: %(message)s'

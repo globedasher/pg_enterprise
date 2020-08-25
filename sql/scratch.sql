@@ -10,5 +10,4 @@ INSERT INTO users (code, email, date) VALUES (3234, 'will@mail.com', now()) ON C
 INSERT INTO users (code, email, date) VALUES (134, 'green@mail.com', now()) ON CONFLICT DO NOTHING;
 INSERT INTO users (code, email, date) VALUES (555, 'oldman@mail.com', now()) ON CONFLICT DO NOTHING;
 
-SELECT * FROM users WHERE code = 32134;
-SELECT * FROM users WHERE code = 134;
+SELECT * FROM users;
