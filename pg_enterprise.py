@@ -6,6 +6,7 @@ from botocore.exceptions import ClientError
 
 
 def get_secret():
+    logging.info("get_secret() called")
     secret_name = "prod/bbrains"
     region_name = "us-west-2"
 
@@ -50,19 +51,21 @@ def get_secret():
         # Depending on whether the secret is a string or binary, one of these fields will be populated.
         if 'SecretString' in get_secret_value_response:
             secret = get_secret_value_response['SecretString']
-            secret = json.loads(secret)
-            return secret
+            retSecret = json.loads(secret)
+            logging.info("returning secret")
+            return retSecret
         else:
             decoded_binary_secret = base64.b64decode(get_secret_value_response['SecretBinary'])
-            decoded_binary_secret = json.loads(decoded_binary_secret)
-            return decoded_binary_secret
+            retSecret = json.loads(decoded_binary_secret)
+            logging.info("returning decoded_binary_secret")
+            return retSecret
 
 def log_config(log_filename):
     formatter = '%(asctime)s: %(levelname)s: %(message)s'
     logging.basicConfig(format=formatter,
             filename=log_filename,
             filemode='w',
-            level=logging.INFO)
+            level=logging.NOTSET)
     logging.info("Logging initialized.")
     # This will cause the log lines to print to stdout as well
     logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
@@ -74,17 +77,17 @@ def get_connection_info():
     connection_info['target_host'] = input_stuff(
             "Target database host address (default is localhost):"
             ,"localhost")
-    logging.log(20, "Target host name %s" % connection_info['target_host'])
+    logging.info("Target host name %s" % connection_info['target_host'])
 
     connection_info['dbname'] = input_stuff(
             "Database name (Name of database on host):"
             ,"postgres")
-    logging.log(20, "Database name %s" % connection_info['dbname'])
+    logging.info("Database name %s" % connection_info['dbname'])
 
     connection_info['user'] = input_stuff(
             "Database role (username - leave blank if same as your current user):"
             ,getpass.getuser())
-    logging.log(20, "Username %s" % connection_info['user'])
+    logging.info("Username %s" % connection_info['user'])
 
     #Obviously, don't log the role password in the log
     connection_info['target_password'] = getpass.getpass("Target role password:")
@@ -93,6 +96,7 @@ def get_connection_info():
 
 def create_connection(connection_info):
     # Connect to the target DB and create a cursor.
+    logging.info("create_connection() called")
     try:
         conn = psycopg2.connect(
                 dbname='postgres',
@@ -101,10 +105,10 @@ def create_connection(connection_info):
                 host=connection_info['host'])
         target_cur = conn.cursor()
     except (psycopg2.OperationalError) as e:
-        logging.log(30, str(e))
+        logging.error(str(e))
         sys.exit(2)
     except:
-        logging.log(30, str(sys.exc_info()))
+        logging.error(str(sys.exc_info()))
         sys.exit(2)
     return conn
 
@@ -151,18 +155,18 @@ def main():
         target_cur.close()
         target_conn.close()
     except (psycopg2.ProgrammingError) as e:
-        logging.log(30, str(e))
+        logging.error(str(e))
     except (psycopg2.InternalError) as e:
-        logging.log(30, str(e))
+        logging.error(str(e))
     except:
-        logging.log(30, sys.exc_info())
+        logging.error(sys.exc_info())
         sys.exit(2)
 
     # Get the exclusions file and log the DBs to be excluded
     exclusions = open_yaml_file("./exclusions.yaml")
     for exclude in exclusions:
         #print("Excluding " + exclude)
-        logging.log(20, "Exclude: %s" % exclude)
+        logging.info("Exclude: %s" % exclude)
 
     #Start processing the DBs and log the start of the process
     with open("./sql/table.sql") as sql_query:
@@ -171,7 +175,7 @@ def main():
         for database in databases:
             if database[0] not in exclusions:
                 #print(database[0])
-                logging.log(20, "Database processed: %s" % database[0])
+                logging.info("Database processed: %s" % database[0])
                 connection_info['dbname'] = database[0]
                 db_conn = create_connection(connection_info)
                 try:
@@ -180,21 +184,21 @@ def main():
                     if "SELECT" in sql:
                         results = db_curr.fetchall()
                         for result in results:
-                            logging.log(20, result)
+                            logging.info(result)
                 except (psycopg2.ProgrammingError) as e:
-                    logging.log(30, str(e))
+                    logging.error(str(e))
                     db_conn.rollback()
                     db_curr.close()
                     db_conn.close()
                     sys.exit(2)
                 except (psycopg2.InternalError) as e:
-                    logging.log(30, str(e))
+                    logging.error(str(e))
                     db_conn.rollback()
                     db_curr.close()
                     db_conn.close()
                     sys.exit(2)
                 except:
-                    logging.log(30, sys.exc_info())
+                    logging.error(sys.exc_info())
                     db_conn.rollback()
                     sys.exit(2)
                 # Commit the transaction
