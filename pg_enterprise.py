@@ -1,4 +1,4 @@
-import os, sys, getopt, psycopg2, getpass, random, logging, yaml, json
+import os, sys, getopt, psycopg2, getpass, random, logging, yaml, json, argparse
 from datetime import datetime as date
 import boto3
 import base64
@@ -52,6 +52,7 @@ def get_secret():
         if 'SecretString' in get_secret_value_response:
             secret = get_secret_value_response['SecretString']
             retSecret = json.loads(secret)
+            retSecret['dbname'] = 'postgres'
             logging.info("returning secret")
             return retSecret
         else:
@@ -59,6 +60,31 @@ def get_secret():
             retSecret = json.loads(decoded_binary_secret)
             logging.info("returning decoded_binary_secret")
             return retSecret
+
+def get_args():
+    """
+    Get argument data passed from the command line and return a dictionary of
+    the arguments.
+    """
+    parser = argparse.ArgumentParser()
+
+    help_text = """The control selector can be set to either 'aws' or cli'. 'aws' will use secrets manager to get the connection string. 'cli' will request the credentials interactively."""
+    parser.add_argument("-s"
+                        , "--selector"
+                        , dest="selector"
+                        , default=""
+                        , help=help_text
+                        )
+
+    help_text = """Set the log level to debug or not."""
+    parser.add_argument("-l"
+                        , "--loglevel"
+                        , dest="log_level"
+                        , default=""
+                        , help=help_text
+                        )
+
+    return parser.parse_args()
 
 def log_config(log_filename):
     formatter = '%(asctime)s: %(levelname)s: %(message)s'
@@ -74,23 +100,23 @@ def get_connection_info():
     # Get host DB information
     connection_info = {}
 
-    connection_info['target_host'] = input_stuff(
+    connection_info['host'] = input_stuff(
             "Target database host address (default is localhost):"
             ,"localhost")
-    logging.info("Target host name %s" % connection_info['target_host'])
+    logging.info("Target host name %s" % connection_info['host'])
 
     connection_info['dbname'] = input_stuff(
             "Database name (Name of database on host):"
             ,"postgres")
     logging.info("Database name %s" % connection_info['dbname'])
 
-    connection_info['user'] = input_stuff(
+    connection_info['username'] = input_stuff(
             "Database role (username - leave blank if same as your current user):"
             ,getpass.getuser())
-    logging.info("Username %s" % connection_info['user'])
+    logging.info("Username %s" % connection_info['username'])
 
     #Obviously, don't log the role password in the log
-    connection_info['target_password'] = getpass.getpass("Target role password:")
+    connection_info['password'] = getpass.getpass("Target role password:")
 
     return connection_info
 
@@ -99,7 +125,7 @@ def create_connection(connection_info):
     logging.info("create_connection() called")
     try:
         conn = psycopg2.connect(
-                dbname='postgres',
+                dbname=connection_info['dbname'],
                 user=connection_info['username'],
                 password=connection_info['password'],
                 host=connection_info['host'])
@@ -134,15 +160,23 @@ def open_yaml_file(filename):
     return data
 
 def main():
+    args = get_args()
+    if not args.selector:
+        print("No args?")
+        sys.exit(2)
+
     log_filename = "log/pg_enterprise_" + str(date.now()) + ".log"
     log_config(log_filename)
     print("Welcome to pg_enterprise. Did you checkout the readme?")
 
-    # Get all the connection information needed to access the DB.
-    #connection_info = get_connection_info()
+    #all_passes()
+    if args.selector == "aws":
+        # Get secret information from aws
+        connection_info = get_secret()
+    elif args.selector == "cli":
+        # Get all the connection information needed to access the DB.
+        connection_info = get_connection_info()
 
-    # Get secret information from aws
-    connection_info = get_secret()
 
     # Get a list of databases on the target database
     try:

@@ -16,6 +16,9 @@ ___
 1. Run `pip install -r requirements.txt` to install module dependencies.
 1. Run `python py_enterprise.py` and proide information at the prompts.
 
+Use the -s flag and aws to use AWS Secrets Manager or cli to manually input
+endpoint credentials.
+
 Intended to run a single SQL script  on postgresql clusters with matching
 schemas across the DBs. Currently limited to one query per SQL script. Add
 exclusions to the exclusions.yaml for unique DBs upon which you cannot run your
