@@ -7,8 +7,15 @@ from botocore.exceptions import ClientError
 
 def get_secret():
     logging.info("get_secret() called")
-    secret_name = "prod/bbrains"
-    region_name = "us-west-2"
+    secret_name = input_stuff(
+            "Please enter the AWS secret name to be used:", None
+            )
+    if not secret_name:
+        logging.info("Please rerun and add a secret name.")
+        sys.exit(2)
+    region_name = input_stuff(
+            "Enter the region name where the secret is held:","us-west-2"
+            )
 
     # Create a Secrets Manager client
     session = boto3.session.Session()
